@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
+import { FirebaseError } from '@angular/fire/app';
 import {
   FormBuilder,
   FormControl,
@@ -8,8 +9,10 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { AlertController, IonicModule } from '@ionic/angular';
+import { IRegisterForm } from 'src/core/interfaces/register-form.interface';
+import { AuthenticationService } from '../services/authentication.service';
 
 @Component({
   selector: 'app-register',
@@ -25,27 +28,31 @@ import { AlertController, IonicModule } from '@ionic/angular';
   ],
 })
 export class RegisterPage implements OnInit {
-  formularioRegister!: FormGroup;
+  registerForm: FormGroup;
 
-  tabsRoute = '/tabs';
+  isLoading = false;
 
   constructor(
     public fb: FormBuilder,
     public alertController: AlertController,
+    private authenticationService: AuthenticationService,
+    private router: Router,
   ) {
-    this.formularioRegister = this.fb.group({
-      nombre: new FormControl('', Validators.required),
-      correo: new FormControl('', [Validators.required, Validators.email]),
-      password: new FormControl('', Validators.required),
-      confirmationPassword: new FormControl('', Validators.required),
+    this.registerForm = this.fb.group({
+      name: new FormControl('', Validators.required),
+      email: new FormControl('', [Validators.required, Validators.email]),
+      password: new FormControl('', [
+        Validators.required,
+        Validators.minLength(6),
+      ]),
     });
   }
 
   ngOnInit() {}
 
-  async guardar() {
-    var f = this.formularioRegister.value;
-    if (this.formularioRegister.get('correo')?.invalid) {
+  async register() {
+    var formValue = this.registerForm.value as IRegisterForm;
+    if (this.registerForm.get('correo')?.invalid) {
       const alert = await this.alertController.create({
         header: 'Correo invalido',
         message: 'Tienes que escribir un correo valido.',
@@ -54,7 +61,7 @@ export class RegisterPage implements OnInit {
       await alert.present();
       return;
     }
-    if (this.formularioRegister.invalid) {
+    if (this.registerForm.invalid) {
       const alert = await this.alertController.create({
         header: 'Datos inválidos',
         message: 'Tienes que llenar todos los datos.',
@@ -63,11 +70,63 @@ export class RegisterPage implements OnInit {
       await alert.present();
       return;
     }
-    var usuario = {
-      nombre: f.nombre,
-      correo: f.correo,
-      password: f.password,
-    };
-    localStorage.setItem('usuario', JSON.stringify(usuario));
+
+    try {
+      this.isLoading = true;
+
+      await this.authenticationService.register(
+        formValue.email,
+        formValue.password,
+        formValue.name,
+      );
+
+      this.isLoading = false;
+      const alert = await this.alertController.create({
+        header: 'Usuario registrado',
+        message:
+          'Usuario registrado correctamente, por favor revise su correo para verificar su cuenta.',
+        buttons: ['Aceptar'],
+      });
+      await alert.present();
+      alert.onDidDismiss().then(() => {
+        this.registerForm.reset();
+        this.router.navigate(['/login'], {
+          queryParams: { email: formValue.email },
+        });
+      });
+    } catch (error) {
+      if (
+        error instanceof FirebaseError &&
+        error.code === 'auth/email-already-in-use'
+      ) {
+        this.isLoading = false;
+        const alert = await this.alertController.create({
+          header: 'Error',
+          message: 'El correo ya esta en uso',
+          buttons: ['Aceptar'],
+        });
+        await alert.present();
+        return;
+      }
+      const alert = await this.alertController.create({
+        header: 'Error',
+        message: 'Error al registrar el usuario',
+        buttons: ['Aceptar'],
+      });
+      await alert.present();
+    }
+  }
+  getErrorMessage(field: string) {
+    var a = this.registerForm.get(field);
+    if (a?.hasError('required')) {
+      return 'Este campo es requerido';
+    }
+    if (a?.hasError('email')) {
+      return 'Correo inválido';
+    }
+    if (a?.hasError('minlength')) {
+      return 'La contraseña debe tener al menos 6 caracteres';
+    }
+    return '';
   }
 }
