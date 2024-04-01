@@ -1,0 +1,64 @@
+<ion-content class="ion-padding">
+  <section class="flex flex-col items-center justify-center w-full pt-4">
+    <h1 class="font-bold">{{ digimonPartial?.id }}</h1>
+    <h1 class="font-bold">{{ digimonPartial?.name }}</h1>
+
+    <img class="mt-4 max-h-52" [src]="digimonPartial?.image" />
+    @if (isLoading) {
+      <ion-spinner class="w-10 h-10 mt-8" name="crescent"></ion-spinner>
+    }
+    <div
+      class="grid items-center justify-around w-full grid-cols-3 mt-10 gap-x-4 gap-y-6"
+    >
+      @if (digimon?.levels?.length) {
+        <div class="flex flex-col items-center gap-2">
+          <span class="font-medium"> Nivele </span>
+          <span class="font-bold">
+            {{ (digimon?.levels)![0].level }}
+          </span>
+        </div>
+      }
+      @if (digimon?.attributes?.length) {
+        <div class="flex flex-col items-center gap-2">
+          <span class="font-medium"> Atributo </span>
+          <span class="font-bold text-center">
+            {{ (digimon?.attributes)![0].attribute }}
+          </span>
+        </div>
+      }
+      @if (digimon?.types?.length) {
+        <div class="flex flex-col items-center gap-2">
+          <span class="font-medium"> Tipo </span>
+          <span class="font-bold text-center">
+            {{ (digimon?.types)![0].type }}
+          </span>
+        </div>
+      }
+      @if (digimon?.fields?.length) {
+        <div class="flex flex-col items-center col-span-3 gap-2">
+          <span class="font-medium"> Campos </span>
+          <span
+            class="flex flex-wrap items-center justify-center gap-2 font-bold text-center"
+          >
+            @for (field of digimon?.fields; track $index) {
+              <span class="px-4 py-1 bg-green-200 rounded-2xl">{{
+                field.field
+              }}</span>
+            }
+          </span>
+        </div>
+      }
+      @if (
+        !digimon?.fields?.length &&
+        !digimon?.types?.length &&
+        !digimon?.attributes?.length &&
+        !digimon?.levels?.length &&
+        !isLoading
+      ) {
+        <div class="w-full col-span-3 font-semibold text-center">
+          No hay información disponible
+        </div>
+      }
+    </div>
+  </section>
+</ion-content>
