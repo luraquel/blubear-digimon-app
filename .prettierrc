@@ -1,0 +1,17 @@
+{
+    "overrides": [
+      {
+        "files": "*.page.html",
+        "options": {
+          "parser": "angular"
+        }
+      },
+      {
+        "files": "*.component.html",
+        "options": {
+          "parser": "angular"
+        }
+      }
+  
+    ]
+  }
